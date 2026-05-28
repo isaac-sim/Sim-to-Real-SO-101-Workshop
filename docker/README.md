@@ -81,7 +81,7 @@ We are running the image and opening it in two terminals.
 ### First terminal - Serving the model
 
 ```bash
-export MODELS_DIR=~/sim2real/models
+export MODELS_DIR=~/models
 export LEROBOT_CALIB=.cache/huggingface/lerobot/calibration
 docker run -it --rm --name real-robot --network host --privileged --gpus all \
     -e DISPLAY \
