@@ -18,8 +18,8 @@ import numpy as np
 import torch
 import uuid
 
-from lerobot.teleoperators.so101_leader import SO101LeaderConfig
-from lerobot.robots.so101_follower import SO101FollowerConfig
+from lerobot.teleoperators.so_leader.config_so_leader import SO101LeaderConfig
+from lerobot.robots.so_follower.config_so_follower import SO101FollowerConfig
 
 from lerobot.cameras.opencv import OpenCVCameraConfig
 from lerobot.configs.policies import PreTrainedConfig
@@ -30,10 +30,10 @@ from lerobot.datasets.pipeline_features import (
     aggregate_pipeline_dataset_features,
     create_initial_features,
 )
-from lerobot.datasets.utils import build_dataset_frame, combine_feature_dicts
+from lerobot.datasets.feature_utils import build_dataset_frame, combine_feature_dicts
 from lerobot.utils.constants import OBS_STR
 from lerobot.utils.control_utils import predict_action
-from lerobot.utils.utils import get_safe_torch_device
+from lerobot.utils.device_utils import get_safe_torch_device
 from lerobot.policies.utils import make_robot_action
 from lerobot.utils.visualization_utils import init_rerun, log_rerun_data
 
