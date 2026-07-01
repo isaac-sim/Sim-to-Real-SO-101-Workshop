@@ -20,10 +20,15 @@ RUN apt-get remove -y python3-cryptography python3-cryptography-dev 2>/dev/null 
 RUN python3 -m pip install --ignore-installed cryptography
 
 RUN git clone https://github.com/NVIDIA/Isaac-GR00T.git /Isaac-GR00T
+# Strip the flash-attn AND triton pins from pyproject.toml. flash-attn is always
+# built from source below (both arches). The triton==3.3.1 pin is only satisfiable
+# on x86-64 PyPI; arm64 PyPI has triton 3.5+ only. Removing the pin is safe on both
+# because the torch nightly cu130 install below supplies pytorch-triton regardless,
+# so this single Dockerfile now builds on both amd64 and arm64 Blackwell GPUs.
 RUN cd /Isaac-GR00T && \
     git checkout "${GROOT_REF}" && \
     git rev-parse --verify HEAD && \
-    sed -i '/flash-attn==/d' pyproject.toml && \
+    sed -i '/flash-attn==/d; /triton==/d' pyproject.toml && \
     python3 -m pip install -e . --break-system-packages
 RUN cd /Isaac-GR00T/gr00t/eval/real_robot/SO100 && \
     python3 -m pip install -e . --break-system-packages
