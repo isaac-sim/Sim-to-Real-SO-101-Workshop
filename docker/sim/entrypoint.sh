@@ -9,6 +9,14 @@ export EXP_PATH=$ISAAC_SIM/apps
 source ${ISAAC_SIM}/setup_python_env.sh
 source /root/env 2>/dev/null
 
+# arm64 only: torch must have libgomp preloaded or it aborts on import with
+# "libgomp.so.1: cannot allocate memory in static TLS block". This is a no-op on
+# x86-64 (the aarch64 library path does not exist there), and we never clobber an
+# LD_PRELOAD the caller already set.
+if [ -z "${LD_PRELOAD:-}" ] && [ -f /usr/lib/aarch64-linux-gnu/libgomp.so.1 ]; then
+  export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1
+fi
+
 cat > /usr/local/bin/python << 'WRAPPER'
 #!/bin/bash
 exec /workspace/isaaclab/_isaac_sim/python.sh "$@"
