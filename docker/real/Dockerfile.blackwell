@@ -36,6 +36,17 @@ RUN python3 -m pip uninstall -y torch torchvision torchaudio && python3 -m pip i
 RUN export MAX_JOBS=2 && python3 -m pip install flash-attn --no-build-isolation --no-cache-dir
 RUN python3 -m pip install feetech-servo-sdk
 
+# Video decode for GR00T TRAINING (finetuning on a LeRobot dataset of .mp4 clips).
+# GR00T's default decoder is `torchcodec`, which decodes on the GPU but only loads once
+# FFmpeg's shared libs (libav*) are present — and its CUDA path needs NPP, which this
+# CUDA-13 image already ships (libnppicc.so.13). So: install the ffmpeg libs, then
+# torchcodec. Without this, training on arm64 has no working video backend (the pyav
+# fallback is unimplemented here and opencv can't decode the H.264 clips); on x86-64 it
+# is a harmless no-op since torchcodec is the default there too. Sim EVALUATION decodes
+# no video (frames arrive as RGB arrays), so this matters for training only.
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+RUN python3 -m pip install torchcodec
+
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
 COPY docker/utils.sh /root/tmp/utils.sh
 RUN cat /root/tmp/utils.sh >> /root/.bashrc && rm /root/tmp/utils.sh
