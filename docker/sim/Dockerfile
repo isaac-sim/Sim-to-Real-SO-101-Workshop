@@ -15,12 +15,8 @@ RUN $PYTHON -m pip install --no-deps -e .
 
 # Pin packages already in the base image to prevent upgrades that break
 # Isaac Lab's internal symlinks (packaging, numpy, lxml, torch, etc.).
-# torch/torchvision are pinned per-architecture to the versions the Isaac Lab base
-# image ACTUALLY ships: the x86-64 base has torch 2.7.0 / torchvision 0.22.0, while
-# the arm64 base has 2.9.0 / 0.24.0. Pinning the wrong pair forces a torch
-# downgrade/upgrade that breaks Isaac Lab's compiled extensions. `uname -m` reports
-# the target architecture (the base image runs as its own arch), so a plain
-# `docker build` picks the right pins on both amd64 and arm64 with no extra flags.
+# torch/torchvision are pinned per-arch to what the base image ships
+# (x86-64: 2.7.0/0.22.0, arm64: 2.9.0/0.24.0).
 RUN if [ "$(uname -m)" = "aarch64" ]; then TORCH=2.9.0; TV=0.24.0; else TORCH=2.7.0; TV=0.22.0; fi && \
     printf '%s\n' \
     "packaging==23.0" \
@@ -32,9 +28,7 @@ RUN if [ "$(uname -m)" = "aarch64" ]; then TORCH=2.9.0; TV=0.24.0; else TORCH=2.
     > /tmp/constraints.txt
 
 # Install only the deps not already in the base image.
-# torchcodec differs by architecture: arm64 PyPI only publishes torchcodec 0.11.0+
-# (older versions are x86-only wheels), so aarch64 uses >=0.11,<0.12 while x86-64
-# keeps the upstream >=0.2.1,<0.6.0 range. Everything else is identical on both.
+# torchcodec: arm64 wheels only exist from 0.11 on.
 RUN if [ "$(uname -m)" = "aarch64" ]; then TORCHCODEC="torchcodec>=0.11,<0.12"; else TORCHCODEC="torchcodec>=0.2.1,<0.6.0"; fi && \
     $PYTHON -m pip install -c /tmp/constraints.txt \
     "datasets>=4.0.0,<4.2.0" \
@@ -52,10 +46,7 @@ RUN if [ "$(uname -m)" = "aarch64" ]; then TORCHCODEC="torchcodec>=0.11,<0.12"; 
     "deepdiff>=7.0.1,<9.0.0" \
     "feetech-servo-sdk>=1.0.0,<2.0.0"
 
-# FFmpeg: the upstream BtbN release is an x86-64 ("linux64") static build, so it is
-# only fetched on x86-64. On aarch64 that binary is the wrong architecture; install
-# the arm64-native package from apt instead. Both paths provide the shared libav*
-# libraries torchcodec links against.
+# FFmpeg: the BtbN release below is x86-64-only; use the apt package on arm64.
 RUN if [ "$(uname -m)" = "aarch64" ]; then \
         apt-get update && apt-get install -y --no-install-recommends ffmpeg && \
         rm -rf /var/lib/apt/lists/*; \

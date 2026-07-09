@@ -20,11 +20,8 @@ RUN apt-get remove -y python3-cryptography python3-cryptography-dev 2>/dev/null 
 RUN python3 -m pip install --ignore-installed cryptography
 
 RUN git clone https://github.com/NVIDIA/Isaac-GR00T.git /Isaac-GR00T
-# Strip the flash-attn AND triton pins from pyproject.toml. flash-attn is always
-# built from source below (both arches). The triton==3.3.1 pin is only satisfiable
-# on x86-64 PyPI; arm64 PyPI has triton 3.5+ only. Removing the pin is safe on both
-# because the torch nightly cu130 install below supplies pytorch-triton regardless,
-# so this single Dockerfile now builds on both amd64 and arm64 Blackwell GPUs.
+# Strip the flash-attn pin (built from source below) and the triton pin
+# (no arm64 wheel; the torch nightly install below provides pytorch-triton).
 RUN cd /Isaac-GR00T && \
     git checkout "${GROOT_REF}" && \
     git rev-parse --verify HEAD && \
@@ -36,14 +33,8 @@ RUN python3 -m pip uninstall -y torch torchvision torchaudio && python3 -m pip i
 RUN export MAX_JOBS=2 && python3 -m pip install flash-attn --no-build-isolation --no-cache-dir
 RUN python3 -m pip install feetech-servo-sdk
 
-# Video decode for GR00T TRAINING (finetuning on a LeRobot dataset of .mp4 clips).
-# GR00T's default decoder is `torchcodec`, which decodes on the GPU but only loads once
-# FFmpeg's shared libs (libav*) are present — and its CUDA path needs NPP, which this
-# CUDA-13 image already ships (libnppicc.so.13). So: install the ffmpeg libs, then
-# torchcodec. Without this, training on arm64 has no working video backend (the pyav
-# fallback is unimplemented here and opencv can't decode the H.264 clips); on x86-64 it
-# is a harmless no-op since torchcodec is the default there too. Sim EVALUATION decodes
-# no video (frames arrive as RGB arrays), so this matters for training only.
+# ffmpeg + torchcodec: GR00T fine-tuning decodes the dataset's .mp4s via torchcodec,
+# which needs FFmpeg's libav* libs. Training-only; the only working backend on arm64.
 RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
 RUN python3 -m pip install torchcodec
 
