@@ -20,16 +20,23 @@ RUN apt-get remove -y python3-cryptography python3-cryptography-dev 2>/dev/null 
 RUN python3 -m pip install --ignore-installed cryptography
 
 RUN git clone https://github.com/NVIDIA/Isaac-GR00T.git /Isaac-GR00T
+# Strip the flash-attn pin (built from source below) and the triton pin
+# (no arm64 wheel; the torch nightly install below provides pytorch-triton).
 RUN cd /Isaac-GR00T && \
     git checkout "${GROOT_REF}" && \
     git rev-parse --verify HEAD && \
-    sed -i '/flash-attn==/d' pyproject.toml && \
+    sed -i '/flash-attn==/d; /triton==/d' pyproject.toml && \
     python3 -m pip install -e . --break-system-packages
 RUN cd /Isaac-GR00T/gr00t/eval/real_robot/SO100 && \
     python3 -m pip install -e . --break-system-packages
 RUN python3 -m pip uninstall -y torch torchvision torchaudio && python3 -m pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu130
 RUN export MAX_JOBS=2 && python3 -m pip install flash-attn --no-build-isolation --no-cache-dir
 RUN python3 -m pip install feetech-servo-sdk
+
+# ffmpeg + torchcodec: GR00T fine-tuning decodes the dataset's .mp4s via torchcodec,
+# which needs FFmpeg's libav* libs. Training-only; the only working backend on arm64.
+RUN apt-get update && apt-get install -y ffmpeg && rm -rf /var/lib/apt/lists/*
+RUN python3 -m pip install torchcodec
 
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.10 1
 COPY docker/utils.sh /root/tmp/utils.sh

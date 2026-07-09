@@ -14,18 +14,23 @@ RUN git checkout e670ac5daf9b76
 RUN $PYTHON -m pip install --no-deps -e .
 
 # Pin packages already in the base image to prevent upgrades that break
-# Isaac Lab's internal symlinks (packaging, numpy, lxml, torch, etc.)
-RUN printf '%s\n' \
+# Isaac Lab's internal symlinks (packaging, numpy, lxml, torch, etc.).
+# torch/torchvision are pinned per-arch to what the base image ships
+# (x86-64: 2.7.0/0.22.0, arm64: 2.9.0/0.24.0).
+RUN if [ "$(uname -m)" = "aarch64" ]; then TORCH=2.9.0; TV=0.24.0; else TORCH=2.7.0; TV=0.22.0; fi && \
+    printf '%s\n' \
     "packaging==23.0" \
     "numpy==1.26.0" \
     "lxml==4.9.4" \
-    "torch==2.7.0" \
-    "torchvision==0.22.0" \
+    "torch==${TORCH}" \
+    "torchvision==${TV}" \
     "imageio==2.37.0" \
     > /tmp/constraints.txt
 
-# Install only the deps not already in the base image
-RUN $PYTHON -m pip install -c /tmp/constraints.txt \
+# Install only the deps not already in the base image.
+# torchcodec: arm64 wheels only exist from 0.11 on.
+RUN if [ "$(uname -m)" = "aarch64" ]; then TORCHCODEC="torchcodec>=0.11,<0.12"; else TORCHCODEC="torchcodec>=0.2.1,<0.6.0"; fi && \
+    $PYTHON -m pip install -c /tmp/constraints.txt \
     "datasets>=4.0.0,<4.2.0" \
     "diffusers>=0.27.2,<0.36.0" \
     "huggingface-hub[hf-transfer,cli]>=0.34.2,<0.36.0" \
@@ -36,16 +41,22 @@ RUN $PYTHON -m pip install -c /tmp/constraints.txt \
     "pynput>=1.7.7,<1.9.0" \
     "pyserial>=3.5,<4.0" \
     "wandb>=0.20.0,<0.22.0" \
-    "torchcodec>=0.2.1,<0.6.0" \
+    "${TORCHCODEC}" \
     "draccus==0.10.0" \
     "deepdiff>=7.0.1,<9.0.0" \
     "feetech-servo-sdk>=1.0.0,<2.0.0"
 
-RUN curl --proto "=https" --tlsv1.2 -sSf -L -o /tmp/ffmpeg.tar.xz \
-    https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-linux64-lgpl-shared-7.1.tar.xz && \
-    tar -xf /tmp/ffmpeg.tar.xz -C /usr/local --strip-components=1 && \
-    ldconfig && \
-    rm /tmp/ffmpeg.tar.xz
+# FFmpeg: the BtbN release below is x86-64-only; use the apt package on arm64.
+RUN if [ "$(uname -m)" = "aarch64" ]; then \
+        apt-get update && apt-get install -y --no-install-recommends ffmpeg && \
+        rm -rf /var/lib/apt/lists/*; \
+    else \
+        curl --proto "=https" --tlsv1.2 -sSf -L -o /tmp/ffmpeg.tar.xz \
+        https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-n7.1-latest-linux64-lgpl-shared-7.1.tar.xz && \
+        tar -xf /tmp/ffmpeg.tar.xz -C /usr/local --strip-components=1 && \
+        ldconfig && \
+        rm /tmp/ffmpeg.tar.xz; \
+    fi
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libx11-6 libxcursor1 libxrandr2 libxi6 libxinerama1 \
