@@ -76,14 +76,16 @@ This will take a while!
 ./docker/real/build.sh <arch> (ada | blackwell)
 ```
 
-We are running the image and opening it in two terminals.
+We are running the image and opening it in two terminals. (`--ipc=host` is needed
+for GR00T fine-tuning: the DataLoader workers overflow Docker's default 64 MB
+`/dev/shm`; it is harmless for serving.)
 
 ### First terminal - Serving the model
 
 ```bash
 export MODELS_DIR=~/models
 export LEROBOT_CALIB=.cache/huggingface/lerobot/calibration
-docker run -it --rm --name real-robot --network host --privileged --gpus all \
+docker run -it --rm --name real-robot --network host --privileged --gpus all --ipc=host \
     -e DISPLAY \
     -v /dev:/dev \
     -v /run/udev:/run/udev:ro \

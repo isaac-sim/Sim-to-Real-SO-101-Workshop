@@ -93,10 +93,11 @@ docker run --name teleop -it --privileged --gpus all -e "ACCEPT_EULA=Y" --rm --n
    teleop-docker:latest
 ```
 
-To start the Real Robot & Inference Server:
+To start the Real Robot & Inference Server (`--ipc=host` is needed for GR00T
+fine-tuning: the DataLoader workers overflow Docker's default 64 MB `/dev/shm`):
 
 ```bash
-docker run -it --rm --name real-robot --network host --privileged --gpus all \
+docker run -it --rm --name real-robot --network host --privileged --gpus all --ipc=host \
     -e DISPLAY \
     -v /dev:/dev \
     -v /run/udev:/run/udev:ro \
