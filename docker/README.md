@@ -37,6 +37,7 @@ docker run --name teleop -it --privileged --gpus all -e "ACCEPT_EULA=Y" --rm --n
    -v $(pwd)/source:/workspace/Sim-to-Real-SO-101-Workshop/source \
    -v $(pwd)/outputs:/workspace/Sim-to-Real-SO-101-Workshop/outputs \
    -v $(pwd)/datasets:/workspace/Sim-to-Real-SO-101-Workshop/datasets \
+   -v $(pwd)/docker/real/scripts:/workspace/Sim-to-Real-SO-101-Workshop/docker/real/scripts \
    teleop-docker:latest
 ```
 
@@ -81,7 +82,7 @@ We are running the image and opening it in two terminals.
 ### First terminal - Serving the model
 
 ```bash
-export MODELS_DIR=~/models
+export MODELS_DIR=~/sim2real/models
 export LEROBOT_CALIB=.cache/huggingface/lerobot/calibration
 docker run -it --rm --name real-robot --network host --privileged --gpus all \
     -e DISPLAY \
@@ -92,7 +93,7 @@ docker run -it --rm --name real-robot --network host --privileged --gpus all \
     -v ~/$LEROBOT_CALIB:/root/$LEROBOT_CALIB \
     -v ./docker/env:/root/env \
     -v $MODELS_DIR:/workspace/models \
-    -v $(pwd)/docker/real/scripts:/workspace/Isaac-GR00T/gr00t/eval/real_robot/SO100 \
+    -v $(pwd)/docker/real/scripts:/Isaac-GR00T/gr00t/eval/real_robot/SO100 \
     real-robot \
     /bin/bash
 
@@ -249,7 +250,7 @@ saves a box-and-whisker plot for visual inspection.
 docker exec -it teleop bash -c "
   setenv ROBOT_PORT=/dev/ttyACM0
   setenv ROBOT_ID=follower_arm_1
-  cd /workspace/lerobot_so101_teleop
+  cd /workspace/Sim-to-Real-SO-101-Workshop
   /workspace/isaaclab/_isaac_sim/python.sh docker/real/scripts/so101_check_calibration.py
 "
 ```
@@ -260,8 +261,8 @@ Override the stats file location with `STATS_JSON` if needed:
 docker exec -it teleop bash -c "
   setenv ROBOT_PORT=/dev/ttyACM0
   setenv ROBOT_ID=follower_arm_1
-  setenv STATS_JSON=/workspace/lerobot_so101_teleop/docker/real/scripts/calibration_stats.json
-  cd /workspace/lerobot_so101_teleop
+  setenv STATS_JSON=/workspace/Sim-to-Real-SO-101-Workshop/docker/real/scripts/calibration_stats.json
+  cd /workspace/Sim-to-Real-SO-101-Workshop
   /workspace/isaaclab/_isaac_sim/python.sh docker/real/scripts/so101_check_calibration.py
 "
 ```

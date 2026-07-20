@@ -29,7 +29,8 @@ OS and Software tested:
 
 1. Create directory and clone this repo
 ```bash
-cd ~/
+mkdir ~/sim2real
+cd ~/sim2real
 git clone https://github.com/isaac-sim/Sim-to-Real-SO-101-Workshop.git
 ```
 
@@ -37,7 +38,7 @@ git clone https://github.com/isaac-sim/Sim-to-Real-SO-101-Workshop.git
 
 2. Navigate to the repo
 ```bash
-cd ~/Sim-to-Real-SO-101-Workshop
+cd ~/sim2real/Sim-to-Real-SO-101-Workshop
 ```
 
 #### Teleop & Simulation container
@@ -63,7 +64,7 @@ For **Ada** architecture GPUs:
 ./docker/real/build.sh ada
 ```
 
-5. Continue with the course instructions [here](https://docs.nvidia.com/learning/physical-ai/sim-to-real-so-101/latest/index.html).
+5. Continue with the course instructions [here](https://docs.nvidia.com/learning/physical-ai/sim-to-real-so-101/latest/datasets-and-models.html).
 
 ### Starting the images
 
@@ -90,6 +91,7 @@ docker run --name teleop -it --privileged --gpus all -e "ACCEPT_EULA=Y" --rm --n
    -v $(pwd)/source:/workspace/Sim-to-Real-SO-101-Workshop/source \
    -v $(pwd)/outputs:/workspace/Sim-to-Real-SO-101-Workshop/outputs \
    -v $(pwd)/datasets:/workspace/Sim-to-Real-SO-101-Workshop/datasets \
+   -v $(pwd)/docker/real/scripts:/workspace/Sim-to-Real-SO-101-Workshop/docker/real/scripts \
    teleop-docker:latest
 ```
 
@@ -104,8 +106,8 @@ docker run -it --rm --name real-robot --network host --privileged --gpus all \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
     -v ~/.cache/huggingface/lerobot/calibration:/root/.cache/huggingface/lerobot/calibration \
     -v ./docker/env:/root/env \
-    -v ~/models:/workspace/models \
-    -v $(pwd)/docker/real/scripts:/workspace/Isaac-GR00T/gr00t/eval/real_robot/SO100 \
+    -v ~/sim2real/models:/workspace/models \
+    -v $(pwd)/docker/real/scripts:/Isaac-GR00T/gr00t/eval/real_robot/SO100 \
     real-robot \
     /bin/bash
 ```
@@ -116,7 +118,8 @@ docker run -it --rm --name real-robot --network host --privileged --gpus all \
 
 First, [install the HuggingFace command-line-interface (CLI)](https://huggingface.co/docs/huggingface_hub/en/guides/cli#command-line-interface-cli)
 
-The models used in the course are listed in the course instructions [here](https://docs.nvidia.com/learning/physical-ai/sim-to-real-so-101/latest/datasets-and-models.html).
+The models used in the course are listed in the course instructions [here](https://docs.nvidia.com/learning/physical-ai/sim-to-real-so-101/datasets-and-models.html).
+
 
 You can either download them ahead of time, or as you get to them in the course.
 
